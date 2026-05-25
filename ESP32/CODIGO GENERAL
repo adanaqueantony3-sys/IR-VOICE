@@ -1,0 +1,117 @@
+#include <WiFi.h>
+#include <SinricPro.h>
+#include <SinricProSwitch.h>
+#include <IRremoteESP8266.h>
+#include <IRsend.h>
+
+// ─── WiFi ─────────────────────────────────────────────────────────
+#define WIFI_SSID     "Adanaque2025"
+#define WIFI_PASSWORD "ADA25inga2"
+
+// ─── SinricPro ────────────────────────────────────────────────────
+#define APP_KEY    "487847c6-dafd-4199-8370-cc5e16292d45"
+#define APP_SECRET "b3d16e81-3fbf-433a-9bc4-f262fc627df4-88f6f9c7-0984-42a4-84f1-84c6cb14a517"
+
+// ─── IDs de dispositivos ──────────────────────────────────────────
+#define DEVICE_TV         "6a0bd339baa50bf9bf373000"
+#define DEVICE_RADIO      "6a0bbf28977a0619a742c5bf"
+#define DEVICE_PROYECTOR  "6a0bc03af9b5f15fa7d89a91"
+
+// ─── Pin emisor IR ────────────────────────────────────────────────
+#define IR_SEND_PIN 19
+IRsend irsend(IR_SEND_PIN);
+
+// ─── Códigos IR: TV ───────────────────────────────────────────────
+void IR_TV() {
+  irsend.sendNikai(0xD5F2A, 24);
+  Serial.println("IR enviado → TV TCL");
+}
+
+// ─── Códigos IR: Radio ────────────────────────────────────────────
+void IR_Radio() {
+  irsend.send(PANASONIC, 0x40040538BC81ULL, 48);
+  Serial.println("IR enviado → Radio Panasonic");
+}
+
+// ─── Códigos IR: Proyector ────────────────────────────────────────
+void IR_Proyector_Encender() {
+  irsend.sendNEC(0xFF28D7, 32);
+  Serial.println("IR → Proyector ENCENDER (Código 0xFF28D7)");
+}
+
+void IR_Proyector_Apagar() {
+  Serial.println("IR → Proyector APAGAR (Pulsación 1: Abriendo menú...)");
+  irsend.sendNEC(0xFF28D7, 32);
+  delay(1500); 
+  Serial.println("IR → Proyector APAGAR (Pulsación 2: Presionando OK para confirmar...)");
+  irsend.sendNEC(0xFFE01F, 32); 
+  Serial.println("IR → Secuencia de apagado completada.");
+}
+
+// ─── Callbacks SinricPro ─────────────────────────────────────────
+bool onTV(const String &deviceId, bool &state) {
+  Serial.printf("Alexa → TV: %s\n", state ? "ENCENDER" : "APAGAR");
+  IR_TV();
+  return true;
+}
+
+bool onRadio(const String &deviceId, bool &state) {
+  Serial.printf("Alexa → Radio: %s\n", state ? "ENCENDER" : "APAGAR");
+  IR_Radio();
+  return true;
+}
+
+bool onProyector(const String &deviceId, bool &state) {
+  Serial.printf("Alexa → Proyector: %s\n", state ? "ENCENDER" : "APAGAR");
+  if (state) {
+    IR_Proyector_Encender();
+  } else {
+    IR_Proyector_Apagar();
+  }
+  return true;
+}
+
+// ─── WiFi ─────────────────────────────────────────────────────────
+void conectarWiFi() {
+  Serial.print("Conectando WiFi");
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("\nWiFi OK — IP: " + WiFi.localIP().toString());
+}
+
+// ─── Setup ────────────────────────────────────────────────────────
+void setup() {
+  Serial.begin(115200);
+  irsend.begin();
+  conectarWiFi();
+
+  SinricProSwitch &sw_tv        = SinricPro[DEVICE_TV];
+  SinricProSwitch &sw_radio     = SinricPro[DEVICE_RADIO];
+  SinricProSwitch &sw_proyector = SinricPro[DEVICE_PROYECTOR];
+
+  sw_tv.onPowerState(onTV);
+  sw_radio.onPowerState(onRadio);
+  sw_proyector.onPowerState(onProyector);
+
+  SinricPro.onConnected([]()    { Serial.println("SinricPro conectado ✓"); });
+  SinricPro.onDisconnected([]() { Serial.println("SinricPro desconectado"); });
+
+  SinricPro.begin(APP_KEY, APP_SECRET);
+
+  Serial.println("─────────────────────────────────────────────");
+  Serial.println("Listo. Comandos disponibles:");
+  Serial.println("  'Alexa, enciende el proyector'");
+  Serial.println("  'Alexa, apaga el proyector'");
+  Serial.println("  'Alexa, enciende el TV'");
+  Serial.println("  'Alexa, apaga el TV'");
+  Serial.println("  'Alexa, enciende el radio'");
+  Serial.println("  'Alexa, apaga el radio'");
+  Serial.println("─────────────────────────────────────────────");
+} // ← Esta era la llave que le faltaba a tu setup()
+
+void loop() {
+  SinricPro.handle();
+}
