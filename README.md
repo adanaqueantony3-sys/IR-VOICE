@@ -12,8 +12,8 @@ El repositorio incluye dos programas:
 
 | Archivo | Función |
 |---|---|
-| `IR_VOICE.ino` | Programa principal: recibe comandos de Alexa y emite señales IR |
-| `IR_Capturador.ino` | Herramienta auxiliar: captura códigos IR de cualquier control remoto |
+| `CODIGO GENERAL` | Programa principal: recibe comandos de Alexa y emite señales IR |
+| `CAPTURADOR IR` | Herramienta auxiliar: captura códigos IR de cualquier control remoto |
 
 ---
 
@@ -29,14 +29,12 @@ El repositorio incluye dos programas:
 
 ## 🗣️ Comandos de Voz Disponibles
 
-```
 "Alexa, enciende el TV"
 "Alexa, apaga el TV"
 "Alexa, enciende el radio"
 "Alexa, apaga el radio"
 "Alexa, enciende el proyector"
 "Alexa, apaga el proyector"
-```
 
 > **Nota:** El proyector usa una secuencia de dos pulsos IR para apagarse (menú + confirmación), con un delay de 1.5 s entre ambos.
 
@@ -55,14 +53,12 @@ El repositorio incluye dos programas:
 
 ### Diagrama de conexión básico
 
-```
 ESP32 GPIO 19 ──[100Ω]──► LED IR (ánodo)
                               └── GND (cátodo)
 
 ESP32 GPIO 18 ◄── TSOP OUT
 TSOP VCC      ── 3.3V
 TSOP GND      ── GND
-```
 
 ---
 
@@ -82,22 +78,19 @@ Instálalas desde el **Library Manager** de Arduino IDE:
 
 ### 1. Clonar el repositorio
 
-```bash
 git clone https://github.com/adanaqueantony3-sys/IR-VOICE.git
 cd IR-VOICE/ESP32
-```
 
 ### 2. Crear una cuenta en SinricPro
 
-1. Ir a [sinric.pro](https://sinric.pro) y crear una cuenta gratuita.
+1. Ir a https://sinric.pro y crear una cuenta gratuita.
 2. Crear **3 dispositivos** de tipo **Switch** (TV, Radio, Proyector).
 3. Copiar el `APP_KEY`, `APP_SECRET` y los **Device IDs**.
 
 ### 3. Configurar credenciales en el código
 
-Edita `IR_VOICE.ino` y reemplaza:
+Edita `CODIGO GENERAL` y reemplaza:
 
-```cpp
 #define WIFI_SSID     "TU_RED_WIFI"
 #define WIFI_PASSWORD "TU_CONTRASEÑA"
 
@@ -107,11 +100,10 @@ Edita `IR_VOICE.ino` y reemplaza:
 #define DEVICE_TV         "id-del-dispositivo-tv"
 #define DEVICE_RADIO      "id-del-dispositivo-radio"
 #define DEVICE_PROYECTOR  "id-del-dispositivo-proyector"
-```
 
 ### 4. Subir el código al ESP32
 
-- Abrir `IR_VOICE.ino` en Arduino IDE.
+- Abrir `CODIGO GENERAL` en Arduino IDE.
 - Seleccionar la placa: **ESP32 Dev Module**.
 - Seleccionar el puerto COM correcto.
 - Clic en **Subir** ▶️.
@@ -127,34 +119,31 @@ Edita `IR_VOICE.ino` y reemplaza:
 
 ## 🔍 Capturar Códigos IR de Nuevos Dispositivos
 
-Si quieres agregar un nuevo aparato, usa `IR_Capturador.ino`:
+Si quieres agregar un nuevo aparato, usa `CAPTURADOR IR`:
 
 1. Conectar el receptor TSOP al **GPIO 18**.
-2. Subir `IR_Capturador.ino` al ESP32.
+2. Subir `CAPTURADOR IR` al ESP32.
 3. Abrir el **Monitor Serial** a **115200 baudios**.
 4. Apuntar el control remoto al receptor y presionar cualquier botón.
 5. Anotar el protocolo, código HEX y bits mostrados.
-6. Usar esos valores en la función IR correspondiente de `IR_VOICE.ino`.
+6. Usar esos valores en la función IR correspondiente de `CODIGO GENERAL`.
 
-**Ejemplo de salida del capturador:**
-```
+Ejemplo de salida:
 ====== CÓDIGO CAPTURADO ======
 Protocolo : NEC
 HEX       : 0xFF28D7
 Bits      : 32
 ==============================
-```
 
 ---
 
 ## 📁 Estructura del Repositorio
 
-```
 IR-VOICE/
 └── ESP32/
-    ├── IR_VOICE.ino        # Programa principal
-    └── IR_Capturador.ino   # Herramienta de captura IR
-```
+    ├── CODIGO GENERAL      # Programa principal
+    ├── CAPTURADOR IR       # Herramienta de captura IR
+    └── README.md
 
 ---
 
@@ -162,11 +151,10 @@ IR-VOICE/
 
 Para agregar un nuevo dispositivo:
 
-1. Captura su código IR con `IR_Capturador.ino`.
+1. Captura su código IR con `CAPTURADOR IR`.
 2. Crea un nuevo Switch en SinricPro y copia el Device ID.
-3. Agrega la función IR y el callback en `IR_VOICE.ino`:
+3. Agrega la función IR y el callback en `CODIGO GENERAL`:
 
-```cpp
 #define DEVICE_NUEVO "tu-nuevo-device-id"
 
 void IR_Nuevo() {
@@ -177,22 +165,19 @@ bool onNuevo(const String &deviceId, bool &state) {
   IR_Nuevo();
   return true;
 }
-```
 
-4. Registra el dispositivo en `setup()`:
+4. Registra el dispositivo en setup():
 
-```cpp
 SinricProSwitch &sw_nuevo = SinricPro[DEVICE_NUEVO];
 sw_nuevo.onPowerState(onNuevo);
-```
 
 ---
 
 ## ⚠️ Notas Importantes
 
-- **No compartas** tus credenciales de WiFi ni de SinricPro públicamente. Considera usar un archivo de configuración separado o variables de entorno.
+- **No compartas** tus credenciales de WiFi ni de SinricPro públicamente.
 - El alcance del LED IR depende del hardware; un transistor NPN amplificador puede duplicar la distancia de control.
-- SinricPro tiene un plan gratuito con límite de dispositivos. Consulta [sinric.pro/pricing](https://sinric.pro/pricing).
+- SinricPro tiene un plan gratuito con límite de dispositivos. Consulta https://sinric.pro/pricing
 
 ---
 
