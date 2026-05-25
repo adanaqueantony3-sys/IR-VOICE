@@ -1,0 +1,24 @@
+#include <IRrecv.h>
+#include <IRutils.h>
+
+#define IR_RECV_PIN 18
+
+IRrecv irrecv(IR_RECV_PIN);
+decode_results results;
+
+void setup() {
+  Serial.begin(115200);
+  irrecv.enableIRIn();
+  Serial.println("Listo. Apunta el control del radio Panasonic y presiona POWER");
+}
+
+void loop() {
+  if (irrecv.decode(&results)) {
+    Serial.println("====== CÓDIGO CAPTURADO ======");
+    Serial.print("Protocolo : "); Serial.println(typeToString(results.decode_type));
+    Serial.print("HEX       : 0x"); Serial.println(results.value, HEX);
+    Serial.print("Bits      : "); Serial.println(results.bits);
+    Serial.println("==============================\n");
+    irrecv.resume();
+  }
+}
